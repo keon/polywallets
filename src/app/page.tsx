@@ -76,12 +76,12 @@ export default function Home() {
       <SiteHeader />
 
       <div className="flex-1 flex flex-col items-center px-4">
-        <div className="w-full max-w-4xl space-y-6 sm:space-y-8 pt-10 sm:pt-16 pb-8 sm:pb-12 text-center">
-          <div className="space-y-2 sm:space-y-3">
-            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight">
+        <div className="w-full max-w-4xl space-y-4 pt-8 sm:pt-12 pb-6 sm:pb-8 text-center">
+          <div className="space-y-1.5">
+            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight">
               Polywallets
             </h1>
-            <p className="text-muted-foreground text-sm sm:text-lg">
+            <p className="text-muted-foreground text-xs sm:text-base">
               Explore any Polymarket wallet. Positions, P&L, performance, and more.
             </p>
           </div>
@@ -91,7 +91,7 @@ export default function Home() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
               <Input
                 placeholder="Enter wallet address (0x...)"
-                className="pl-10 h-11 sm:h-12 text-sm sm:text-base"
+                className="pl-10 h-10 sm:h-11 text-sm"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 onFocus={() => {
@@ -146,7 +146,7 @@ export default function Home() {
             </div>
             <Button
               size="lg"
-              className="h-11 sm:h-12 px-4 sm:px-6"
+              className="h-10 sm:h-11 px-4 sm:px-5"
               onClick={handleSearch}
               disabled={!address.trim() || !/^0x[a-fA-F0-9]{40}$/.test(address.trim())}
             >
@@ -155,12 +155,12 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="w-full max-w-4xl pb-16">
+        <div className="w-full max-w-4xl pb-10">
           <Leaderboard />
         </div>
       </div>
 
-      <footer className="border-t border-border/50 py-6 px-4">
+      <footer className="border-t border-border/50 py-4 px-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} Polywallets</p>
           <div className="flex items-center gap-4">

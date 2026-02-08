@@ -1,7 +1,7 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatUSD, pnlColor, pnlSign } from "@/lib/format";
+import { formatUSD, pnlSign } from "@/lib/format";
 import type { WalletPnLResponse } from "@/lib/predexon";
 import {
   ResponsiveContainer,
@@ -28,27 +28,17 @@ function formatAxisDate(ts: number): string {
 
 export function PnlChart({ data, loading }: PnlChartProps) {
   if (loading) {
-    return (
-      <div>
-        <h2 className="text-lg font-bold mb-4">Realized P&L</h2>
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
+    return <Skeleton className="h-48 sm:h-56 w-full rounded-none" />;
   }
 
   if (!data || data.pnl_over_time.length === 0) {
     return (
-      <div>
-        <h2 className="text-lg font-bold mb-4">Realized P&L</h2>
-        <p className="text-muted-foreground text-sm">No P&L data available.</p>
+      <div className="h-32 flex items-center justify-center">
+        <p className="text-muted-foreground text-xs">No P&L data available.</p>
       </div>
     );
   }
 
-  const realized = data.realized_pnl ?? 0;
-  const unrealized = data.unrealized_pnl ?? 0;
-  const fees = (data.fees_paid ?? 0) - (data.fees_refunded ?? 0);
-  const total = data.total_pnl ?? (realized + unrealized - fees);
   const lastPnl = data.pnl_over_time[data.pnl_over_time.length - 1]?.pnl_to_date ?? 0;
   const isPositive = lastPnl >= 0;
 
@@ -57,96 +47,54 @@ export function PnlChart({ data, loading }: PnlChartProps) {
     pnl: d.pnl_to_date,
   }));
 
+  const strokeColor = isPositive ? "#00C805" : "#FF5000";
+
   return (
-    <div>
-      <h2 className="text-lg font-bold mb-3">Realized P&L</h2>
-
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-        <div>
-          <p className="text-[11px] sm:text-xs text-muted-foreground">Realized</p>
-          <p className={`text-sm sm:text-base font-bold font-mono ${pnlColor(realized)}`}>
-            {pnlSign(realized)}{formatUSD(realized)}
-          </p>
-        </div>
-        <div>
-          <p className="text-[11px] sm:text-xs text-muted-foreground">Unrealized</p>
-          <p className={`text-sm sm:text-base font-bold font-mono ${pnlColor(unrealized)}`}>
-            {pnlSign(unrealized)}{formatUSD(unrealized)}
-          </p>
-        </div>
-        <div>
-          <p className="text-[11px] sm:text-xs text-muted-foreground">Fees Paid</p>
-          <p className="text-sm sm:text-base font-bold font-mono">
-            {fees > 0 ? "-" : ""}{formatUSD(fees)}
-          </p>
-        </div>
-        <div>
-          <p className="text-[11px] sm:text-xs text-muted-foreground">Total (after fees)</p>
-          <p className={`text-sm sm:text-base font-bold font-mono ${pnlColor(total)}`}>
-            {pnlSign(total)}{formatUSD(total)}
-          </p>
-        </div>
-      </div>
-
-      {/* Chart */}
-      <div className="h-56 sm:h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="pnlGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={isPositive ? "#00C805" : "#FF5000"} stopOpacity={0.15} />
-                <stop offset="100%" stopColor={isPositive ? "#00C805" : "#FF5000"} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <XAxis
-              dataKey="ts"
-              tickFormatter={formatAxisDate}
-              tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-              axisLine={false}
-              tickLine={false}
-              minTickGap={40}
-            />
-            <YAxis
-              tickFormatter={(v) => {
-                const n = Number(v);
-                const abs = Math.abs(n);
-                if (abs >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-                if (abs >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
-                return `$${n.toFixed(0)}`;
-              }}
-              tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-              axisLine={false}
-              tickLine={false}
-              width={60}
-            />
-            <ReferenceLine y={0} stroke="var(--border)" strokeDasharray="3 3" />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "var(--background)",
-                border: "1px solid var(--border)",
-                borderRadius: "6px",
-                fontSize: "12px",
-                padding: "8px 12px",
-              }}
-              labelFormatter={(ts) => formatDate(Number(ts))}
-              formatter={(value) => [
-                `${pnlSign(Number(value))}${formatUSD(Number(value))}`,
-                "P&L",
-              ]}
-            />
-            <Area
-              type="monotone"
-              dataKey="pnl"
-              stroke={isPositive ? "#00C805" : "#FF5000"}
-              strokeWidth={1.5}
-              fill="url(#pnlGradient)"
-              dot={false}
-              activeDot={{ r: 3, strokeWidth: 0, fill: isPositive ? "#00C805" : "#FF5000" }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+    <div className="h-48 sm:h-56 -mx-4">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={chartData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="pnlGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={strokeColor} stopOpacity={0.12} />
+              <stop offset="100%" stopColor={strokeColor} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <XAxis
+            dataKey="ts"
+            tickFormatter={formatAxisDate}
+            tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+            axisLine={false}
+            tickLine={false}
+            minTickGap={50}
+          />
+          <YAxis hide />
+          <ReferenceLine y={0} stroke="var(--border)" strokeDasharray="3 3" />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "var(--background)",
+              border: "1px solid var(--border)",
+              borderRadius: "6px",
+              fontSize: "12px",
+              padding: "6px 10px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+            }}
+            labelFormatter={(ts) => formatDate(Number(ts))}
+            formatter={(value) => [
+              `${pnlSign(Number(value))}${formatUSD(Number(value))}`,
+              "P&L",
+            ]}
+          />
+          <Area
+            type="monotone"
+            dataKey="pnl"
+            stroke={strokeColor}
+            strokeWidth={1.5}
+            fill="url(#pnlGradient)"
+            dot={false}
+            activeDot={{ r: 3, strokeWidth: 0, fill: strokeColor }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }

@@ -24,9 +24,9 @@ export function PositionsTable({ data, loading, isOwner, onRedeem, redeemedIds }
   if (loading) {
     return (
       <div>
-        <h2 className="text-lg font-bold mb-4">Positions</h2>
-        <div className="space-y-3">
-          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Positions</h2>
+        <div className="space-y-2">
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
         </div>
       </div>
     );
@@ -35,8 +35,8 @@ export function PositionsTable({ data, loading, isOwner, onRedeem, redeemedIds }
   if (!data || data.positions.length === 0) {
     return (
       <div>
-        <h2 className="text-lg font-bold mb-4">Positions</h2>
-        <p className="text-muted-foreground text-sm">No positions found.</p>
+        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Positions</h2>
+        <p className="text-muted-foreground text-xs">No positions found.</p>
       </div>
     );
   }
@@ -49,63 +49,62 @@ export function PositionsTable({ data, loading, isOwner, onRedeem, redeemedIds }
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
-        <div>
-          <h2 className="text-lg font-bold">Positions</h2>
-          <p className="text-xs sm:text-sm text-muted-foreground">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Positions</h2>
+          <span className="text-[10px] text-muted-foreground/70">
             {openPositions.length} open · {closedPositions.length} closed
-          </p>
+          </span>
         </div>
-        <div className="flex items-center gap-3 sm:gap-4">
-          {data.summary && (
-            <div className="text-left sm:text-right">
-              <p className="text-xs sm:text-sm text-muted-foreground">Portfolio Value</p>
-              <p className="text-base sm:text-lg font-bold">{formatUSD(data.summary.total_value_usd)}</p>
-            </div>
-          )}
-          <Button variant="outline" size="sm" className="shrink-0" onClick={() => setShowClosed(!showClosed)}>
-            {showClosed ? "Hide" : "Show"} Closed
-          </Button>
-        </div>
+        <button
+          onClick={() => setShowClosed(!showClosed)}
+          className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {showClosed ? "Hide closed" : "Show closed"}
+        </button>
       </div>
-      <div className="divide-y">
+      <div className="divide-y divide-border/50">
         {displayPositions.map((pos) => (
-          <div key={`${pos.market.condition_id}-${pos.market.side}`} className="flex items-center justify-between py-3 gap-3 sm:gap-4">
+          <div key={`${pos.market.condition_id}-${pos.market.side}`} className="flex items-center justify-between py-2.5 gap-3">
             <div className="min-w-0 flex-1">
-              <p className="font-medium truncate text-xs sm:text-sm">{pos.market.title}</p>
-              <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5">
-                <Badge variant={pos.market.side === "YES" ? "default" : "secondary"} className="text-[10px] sm:text-xs">
+              <p className="font-medium truncate text-xs sm:text-sm leading-tight">{pos.market.title}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className={`text-[10px] font-medium ${pos.market.side === "YES" ? "text-[var(--color-profit)]" : "text-muted-foreground"}`}>
                   {pos.market.side_label || pos.market.side}
-                </Badge>
-                <span className="text-[10px] sm:text-xs text-muted-foreground">
+                </span>
+                <span className="text-[10px] text-muted-foreground">
                   {pos.position.shares.toFixed(2)} @ {pos.position.avg_entry_price.toFixed(3)}
                 </span>
               </div>
             </div>
             <div className="text-right shrink-0">
-              <p className="font-mono text-xs sm:text-sm font-medium">{formatUSD(pos.current.value_usd)}</p>
-              <p className={`text-[10px] sm:text-xs font-mono ${pnlColor(pos.pnl.unrealized_usd)}`}>
+              <p className="font-mono text-xs sm:text-sm font-medium tabular-nums">{formatUSD(pos.current.value_usd)}</p>
+              <p className={`text-[10px] font-mono tabular-nums ${pnlColor(pos.pnl.unrealized_usd)}`}>
                 {pnlSign(pos.pnl.unrealized_usd)}{formatUSD(pos.pnl.unrealized_usd)}
               </p>
             </div>
             {isOwner && pos.current.price >= 0.99 && pos.position.shares > 0 && (
               redeemedIds?.has(pos.market.condition_id) ? (
-                <Badge variant="outline" className="hidden sm:inline-flex text-[10px] sm:text-xs text-muted-foreground">
-                  Redeemed
-                </Badge>
+                <span className="hidden sm:inline text-[10px] text-muted-foreground">Redeemed</span>
               ) : (
-                <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => onRedeem?.(pos)}>
+                <button
+                  onClick={() => onRedeem?.(pos)}
+                  className="hidden sm:inline text-[11px] font-medium text-[var(--color-profit)] hover:underline"
+                >
                   Redeem
-                </Button>
+                </button>
               )
             )}
           </div>
         ))}
       </div>
       {hasMore && (
-        <Button variant="ghost" size="sm" className="w-full mt-2 text-muted-foreground" onClick={() => setExpanded(!expanded)}>
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="w-full text-center py-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+        >
           {expanded ? "Show less" : `Show all ${allDisplay.length}`}
-        </Button>
+        </button>
       )}
     </div>
   );

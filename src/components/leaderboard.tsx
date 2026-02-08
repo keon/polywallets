@@ -3,12 +3,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { formatUSD, formatPct, formatAddress, pnlColor, pnlSign } from "@/lib/format";
 import Link from "next/link";
-import { Search, ChevronRight } from "lucide-react";
+import { Search, ChevronRight, ArrowLeft } from "lucide-react";
 import { track } from "@/lib/track";
 
 interface LeaderboardEntry {
@@ -49,8 +47,8 @@ export function Leaderboard() {
   return (
     <Tabs defaultValue="global" className="w-full">
       <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="global" className="text-xs sm:text-sm">Global Leaderboard</TabsTrigger>
-        <TabsTrigger value="market" className="text-xs sm:text-sm">Market Leaderboard</TabsTrigger>
+        <TabsTrigger value="global" className="text-xs sm:text-sm">Global</TabsTrigger>
+        <TabsTrigger value="market" className="text-xs sm:text-sm">By Market</TabsTrigger>
       </TabsList>
       <TabsContent value="global">
         <GlobalLeaderboard />
@@ -61,6 +59,13 @@ export function Leaderboard() {
     </Tabs>
   );
 }
+
+const TIME_WINDOWS = [
+  { value: "all_time", label: "ALL" },
+  { value: "30d", label: "30D" },
+  { value: "7d", label: "7D" },
+  { value: "1d", label: "24H" },
+] as const;
 
 function GlobalLeaderboard() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
@@ -81,26 +86,28 @@ function GlobalLeaderboard() {
   }, [window, fetchLeaderboard]);
 
   return (
-    <div className="pt-4">
-      <div className="flex items-center justify-between mb-4 gap-2">
-        <h3 className="text-base sm:text-lg font-bold shrink-0">Top Traders</h3>
-        <div className="flex gap-0.5 sm:gap-1">
-          {([["all_time", "All"], ["30d", "30d"], ["7d", "7d"], ["1d", "24h"]] as const).map(([val, label]) => (
-            <Button
-              key={val}
-              variant={window === val ? "default" : "ghost"}
-              size="sm"
-              className="px-2 sm:px-3 text-xs sm:text-sm"
-              onClick={() => setWindow(val)}
+    <div className="pt-3">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Top Traders</h3>
+        <div className="flex gap-1">
+          {TIME_WINDOWS.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setWindow(value)}
+              className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-colors ${
+                window === value
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
             >
               {label}
-            </Button>
+            </button>
           ))}
         </div>
       </div>
       {loading ? (
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
         </div>
       ) : (
         <LeaderboardList entries={entries} />
@@ -141,28 +148,24 @@ function MarketLeaderboard() {
 
   if (selectedMarket) {
     return (
-      <div className="pt-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-fit -ml-2 mb-3"
-          onClick={() => {
-            setSelectedMarket(null);
-            setEntries([]);
-          }}
+      <div className="pt-3">
+        <button
+          onClick={() => { setSelectedMarket(null); setEntries([]); }}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2"
         >
-          &larr; Back to markets
-        </Button>
-        <h3 className="text-base font-bold">{selectedMarket.title}</h3>
-        <p className="text-sm text-muted-foreground mb-4">
+          <ArrowLeft className="h-3 w-3" />
+          Back
+        </button>
+        <h3 className="text-sm font-medium">{selectedMarket.title}</h3>
+        <p className="text-[10px] text-muted-foreground mb-3">
           Volume: {formatUSD(selectedMarket.total_volume_usd)}
         </p>
         {entriesLoading ? (
-          <div className="space-y-3">
-            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
           </div>
         ) : entries.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No leaderboard data for this market.</p>
+          <p className="text-muted-foreground text-xs">No leaderboard data for this market.</p>
         ) : (
           <LeaderboardList entries={entries} />
         )}
@@ -171,37 +174,37 @@ function MarketLeaderboard() {
   }
 
   return (
-    <div className="pt-4">
-      <h3 className="text-lg font-bold mb-3">Select a Market</h3>
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+    <div className="pt-3">
+      <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Select a Market</h3>
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <Input
           placeholder="Search markets..."
-          className="pl-10"
+          className="pl-9 h-9 text-sm"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
       {marketsLoading ? (
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
         </div>
       ) : (
-        <div className="divide-y">
+        <div className="divide-y divide-border/50">
           {filteredMarkets.map((market) => (
             <button
               key={market.condition_id}
-              className="w-full text-left py-3 flex items-center justify-between gap-3 sm:gap-4 hover:bg-accent/50 -mx-2 px-2 transition-colors"
+              className="w-full text-left py-2.5 flex items-center justify-between gap-3 hover:bg-accent/30 -mx-2 px-2 rounded-sm transition-colors"
               onClick={() => selectMarket(market)}
             >
               <span className="font-medium text-xs sm:text-sm truncate">{market.title}</span>
-              <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap shrink-0">
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">
                 {formatUSD(market.total_volume_usd)}
               </span>
             </button>
           ))}
           {filteredMarkets.length === 0 && (
-            <p className="text-muted-foreground text-sm py-4 text-center">No markets found.</p>
+            <p className="text-muted-foreground text-xs py-4 text-center">No markets found.</p>
           )}
         </div>
       )}
@@ -211,35 +214,35 @@ function MarketLeaderboard() {
 
 function LeaderboardList({ entries }: { entries: LeaderboardEntry[] }) {
   return (
-    <div className="divide-y">
+    <div className="divide-y divide-border/50">
       {entries.map((entry) => (
         <Link
           key={entry.user}
           href={`/w/${entry.user}`}
           onClick={() => track("leaderboard-click", { address: entry.user, rank: entry.rank })}
-          className="flex items-center justify-between py-3 gap-3 sm:gap-4 hover:bg-accent/50 -mx-2 px-2 transition-colors"
+          className="flex items-center justify-between py-2.5 gap-3 hover:bg-accent/30 -mx-2 px-2 rounded-sm transition-colors"
         >
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <span className={`font-mono font-bold text-xs sm:text-sm w-5 sm:w-6 shrink-0 ${rankColor(entry.rank)}`}>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className={`font-mono font-bold text-xs w-5 shrink-0 tabular-nums ${rankColor(entry.rank)}`}>
               {entry.rank}
             </span>
             <div className="min-w-0">
-              <p className="font-mono text-xs sm:text-sm" title={entry.user}>{formatAddress(entry.user)}</p>
-              <Badge variant="outline" className="text-[10px] sm:text-xs capitalize mt-0.5">
+              <p className="font-mono text-xs sm:text-sm font-medium" title={entry.user}>{formatAddress(entry.user)}</p>
+              <p className="text-[10px] text-muted-foreground capitalize mt-0.5">
                 {entry.trading_styles.primary_style.toLowerCase().replace(/_/g, " ")}
-              </Badge>
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <div className="text-right">
-              <p className={`font-mono text-xs sm:text-sm font-medium ${pnlColor(entry.metrics.realized_pnl)}`}>
+              <p className={`font-mono text-xs sm:text-sm font-medium tabular-nums ${pnlColor(entry.metrics.realized_pnl)}`}>
                 {pnlSign(entry.metrics.realized_pnl)}{formatUSD(entry.metrics.realized_pnl)}
               </p>
-              <p className={`font-mono text-[10px] sm:text-xs ${pnlColor(entry.metrics.roi)}`}>
+              <p className={`font-mono text-[10px] tabular-nums ${pnlColor(entry.metrics.roi)}`}>
                 {pnlSign(entry.metrics.roi)}{formatPct(entry.metrics.roi)}
               </p>
             </div>
-            <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
         </Link>
       ))}

@@ -23,6 +23,7 @@ import {
   type WalletPnLResponse,
   type Position,
 } from "@/lib/predexon";
+import { formatUSD, pnlColor, pnlSign } from "@/lib/format";
 
 // Polymarket Conditional Tokens Framework (CTF) on Polygon
 const CTF_ADDRESS = "0x4D97DCd97eC945f40cF65F87097ACe5EA0476045" as const;
@@ -150,6 +151,8 @@ export default function WalletPage({ params }: { params: Promise<{ address: stri
       .finally(() => setPnlLoading(false));
   }, [address]);
 
+  const allTimeMetrics = profile?.metrics.all_time;
+
   if (error) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -178,11 +181,12 @@ export default function WalletPage({ params }: { params: Promise<{ address: stri
     <div className="min-h-screen">
       <SiteHeader />
 
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      <main className="max-w-5xl mx-auto px-4 py-4">
+        {/* 1. Wallet identity + Hero P&L */}
         {profileLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-8 w-48 sm:w-64" />
-            <Skeleton className="h-6 w-36 sm:w-48" />
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-8 w-36" />
           </div>
         ) : profile ? (
           <WalletHeader
@@ -191,45 +195,63 @@ export default function WalletPage({ params }: { params: Promise<{ address: stri
             isOwner={isOwner}
             firstTradeAt={profile.first_trade_at}
             lastTradeAt={profile.last_trade_at}
+            realizedPnl={allTimeMetrics?.realized_pnl}
+            roi={allTimeMetrics?.roi}
+            portfolioValue={positions?.summary?.total_value_usd}
           />
         ) : null}
 
-        {profileLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-20 sm:h-24" />)}
-          </div>
-        ) : profile ? (
-          <MetricsCards profile={profile} />
-        ) : null}
+        {/* 2. Chart — full bleed, no title */}
+        <div className="mt-2">
+          <PnlChart data={pnl} loading={pnlLoading} />
+        </div>
 
+        {/* 3. Stats — Robinhood flat grid with period pills */}
+        <div className="mt-5">
+          <SectionLabel>Stats</SectionLabel>
+          {profileLoading ? (
+            <div className="grid grid-cols-3 gap-4 mt-2">
+              {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-4 w-full" />)}
+            </div>
+          ) : profile ? (
+            <MetricsCards profile={profile} />
+          ) : null}
+        </div>
+
+        {/* 4. Portfolio summary */}
         {positions?.summary && (
-          <div className="border-t pt-4">
-            <h2 className="text-lg font-bold mb-3">Portfolio</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-              <SummaryCard label="Total Value" value={positions.summary.total_value_usd} />
-              <SummaryCard label="Total Cost" value={positions.summary.total_cost_usd} />
-              <SummaryCard label="Unrealized P&L" value={positions.summary.total_unrealized_pnl_usd} isPnl />
-              <SummaryCard label="Realized P&L" value={positions.summary.total_realized_pnl_usd} isPnl />
-              <SummaryCard label="Win / Loss" value={0} custom={`${positions.summary.winning_positions}W – ${positions.summary.losing_positions}L`} />
-              <SummaryCard label="Fees Paid" value={positions.summary.fees_paid} />
+          <div className="mt-5">
+            <SectionLabel>Portfolio</SectionLabel>
+            <div className="grid grid-cols-3 gap-x-8 mt-1">
+              <PortfolioStat label="Total Value" value={formatUSD(positions.summary.total_value_usd)} />
+              <PortfolioStat label="Total Cost" value={formatUSD(positions.summary.total_cost_usd)} />
+              <PortfolioStat
+                label="Unrealized P&L"
+                value={`${pnlSign(positions.summary.total_unrealized_pnl_usd)}${formatUSD(positions.summary.total_unrealized_pnl_usd)}`}
+                className={pnlColor(positions.summary.total_unrealized_pnl_usd)}
+              />
             </div>
           </div>
         )}
 
-        <PnlChart data={pnl} loading={pnlLoading} />
+        {/* 5. Positions */}
+        <div className="mt-5">
+          <PositionsTable
+            data={positions}
+            loading={positionsLoading}
+            isOwner={isOwner}
+            onRedeem={setRedeemTarget}
+            redeemedIds={redeemedIds}
+          />
+        </div>
 
-        <PositionsTable
-          data={positions}
-          loading={positionsLoading}
-          isOwner={isOwner}
-          onRedeem={setRedeemTarget}
-          redeemedIds={redeemedIds}
-        />
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+        {/* 6. Markets + Similar Wallets */}
+        <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-6">
           <MarketPerformance data={markets} loading={marketsLoading} />
           <SimilarWallets data={similar} loading={similarLoading} />
         </div>
+
+        <div className="h-8" />
       </main>
 
       <Dialog open={!!redeemTarget || isRedeemConfirmed} onOpenChange={(open) => {
@@ -342,21 +364,19 @@ export default function WalletPage({ params }: { params: Promise<{ address: stri
   );
 }
 
-function SummaryCard({ label, value, isPnl, custom }: { label: string; value: number; isPnl?: boolean; custom?: string }) {
-  const color = isPnl ? (value > 0 ? "text-[var(--color-profit)]" : value < 0 ? "text-[var(--color-loss)]" : "text-muted-foreground") : "";
-  const sign = isPnl && value > 0 ? "+" : "";
-  const abs = Math.abs(value);
-  const formatted = custom ?? (abs >= 1_000_000
-    ? `${value < 0 ? "-" : ""}$${(abs / 1_000_000).toFixed(2)}M`
-    : abs >= 1_000
-    ? `${value < 0 ? "-" : ""}$${(abs / 1_000).toFixed(2)}K`
-    : `${value < 0 ? "-" : ""}$${abs.toFixed(2)}`);
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div>
-      <p className="text-[11px] sm:text-xs text-muted-foreground">{label}</p>
-      <p className={`text-sm sm:text-base font-bold font-mono ${color}`}>
-        {custom ? "" : sign}{formatted}
-      </p>
+    <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+      {children}
+    </h2>
+  );
+}
+
+function PortfolioStat({ label, value, className }: { label: string; value: string; className?: string }) {
+  return (
+    <div className="flex items-center justify-between py-[5px]">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className={`text-xs font-medium font-mono tabular-nums ${className ?? ""}`}>{value}</span>
     </div>
   );
 }
