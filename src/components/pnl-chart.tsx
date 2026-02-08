@@ -108,11 +108,12 @@ export function PnlChart({ data, loading }: PnlChartProps) {
               minTickGap={40}
             />
             <YAxis
-              tickFormatter={(v: number) => {
-                const abs = Math.abs(v);
-                if (abs >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
-                if (abs >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
-                return `$${v.toFixed(0)}`;
+              tickFormatter={(v) => {
+                const n = Number(v);
+                const abs = Math.abs(n);
+                if (abs >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+                if (abs >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
+                return `$${n.toFixed(0)}`;
               }}
               tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
               axisLine={false}
@@ -128,9 +129,9 @@ export function PnlChart({ data, loading }: PnlChartProps) {
                 fontSize: "12px",
                 padding: "8px 12px",
               }}
-              labelFormatter={(ts: number) => formatDate(ts)}
-              formatter={(value: number) => [
-                `${pnlSign(value)}${formatUSD(value)}`,
+              labelFormatter={(ts) => formatDate(Number(ts))}
+              formatter={(value) => [
+                `${pnlSign(Number(value))}${formatUSD(Number(value))}`,
                 "P&L",
               ]}
             />
