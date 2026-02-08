@@ -3,6 +3,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatUSD, formatPct, pnlColor, pnlSign } from "@/lib/format";
 import type { WalletMarketsResponse } from "@/lib/predexon";
+import { ExternalLink } from "lucide-react";
 import { useState } from "react";
 
 const PREVIEW_COUNT = 5;
@@ -48,7 +49,15 @@ export function MarketPerformance({ data, loading }: MarketPerformanceProps) {
         {displayMarkets.map((market) => (
           <div key={market.market_slug} className="py-2.5">
             <div className="flex items-start justify-between gap-3">
-              <p className="font-medium text-xs sm:text-sm leading-snug flex-1 min-w-0">{market.title}</p>
+              <a
+                href={`https://polymarket.com/markets?_q=${encodeURIComponent(market.title)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-xs sm:text-sm leading-snug flex-1 min-w-0 hover:underline inline-flex items-start gap-1 group"
+              >
+                <span>{market.title}</span>
+                <ExternalLink className="h-3 w-3 shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity" />
+              </a>
               <div className="text-right shrink-0">
                 <p className={`font-mono text-xs sm:text-sm font-medium tabular-nums ${pnlColor(market.metrics.realized_pnl)}`}>
                   {pnlSign(market.metrics.realized_pnl)}{formatUSD(market.metrics.realized_pnl)}

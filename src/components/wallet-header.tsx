@@ -56,7 +56,7 @@ export function WalletHeader({ address, tradingStyles, isOwner, firstTradeAt, la
           {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
         </Button>
         <a
-          href={`https://polymarket.com/profile/${address}`}
+          href={`https://polymarket.com/portfolio/${address}`}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => track("view-polymarket-profile", { address })}

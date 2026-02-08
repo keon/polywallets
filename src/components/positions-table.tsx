@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatUSD, pnlColor, pnlSign } from "@/lib/format";
 import type { Position, PositionsResponse } from "@/lib/predexon";
+import { ExternalLink } from "lucide-react";
 import { useState } from "react";
 
 const PREVIEW_COUNT = 5;
@@ -67,7 +68,15 @@ export function PositionsTable({ data, loading, isOwner, onRedeem, redeemedIds }
         {displayPositions.map((pos) => (
           <div key={`${pos.market.condition_id}-${pos.market.side}`} className="flex items-center justify-between py-2.5 gap-3">
             <div className="min-w-0 flex-1">
-              <p className="font-medium truncate text-xs sm:text-sm leading-tight">{pos.market.title}</p>
+              <a
+                href={`https://polymarket.com/markets?_q=${encodeURIComponent(pos.market.title)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium truncate text-xs sm:text-sm leading-tight hover:underline inline-flex items-center gap-1 group max-w-full"
+              >
+                <span className="truncate">{pos.market.title}</span>
+                <ExternalLink className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-50 transition-opacity" />
+              </a>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className={`text-[10px] font-medium ${pos.market.side === "YES" ? "text-[var(--color-profit)]" : "text-muted-foreground"}`}>
                   {pos.market.side_label || pos.market.side}

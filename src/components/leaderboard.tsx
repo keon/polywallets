@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatUSD, formatPct, formatAddress, pnlColor, pnlSign } from "@/lib/format";
 import Link from "next/link";
-import { Search, ChevronRight, ArrowLeft } from "lucide-react";
+import { Search, ChevronRight, ArrowLeft, ExternalLink } from "lucide-react";
 import { track } from "@/lib/track";
 
 interface LeaderboardEntry {
@@ -156,7 +156,15 @@ function MarketLeaderboard() {
           <ArrowLeft className="h-3 w-3" />
           Back
         </button>
-        <h3 className="text-sm font-medium">{selectedMarket.title}</h3>
+        <a
+          href={`https://polymarket.com/markets?_q=${encodeURIComponent(selectedMarket.title)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm font-medium hover:underline inline-flex items-center gap-1 group"
+        >
+          {selectedMarket.title}
+          <ExternalLink className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-50 transition-opacity" />
+        </a>
         <p className="text-[10px] text-muted-foreground mb-3">
           Volume: {formatUSD(selectedMarket.total_volume_usd)}
         </p>

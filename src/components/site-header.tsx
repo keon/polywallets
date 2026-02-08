@@ -35,7 +35,7 @@ export function SiteHeader() {
     <header className="border-b border-border/50">
       <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo.svg" alt="Polywallets" width={24} height={24} className="h-6 w-6" />
+          <Image src="/logo.svg" alt="Polywallets" width={24} height={24} className="h-6 w-6 dark:invert" />
           <span className="text-base font-bold">Polywallets</span>
         </Link>
         <div className="flex items-center gap-2 sm:gap-3">
