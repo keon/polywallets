@@ -56,11 +56,13 @@ import { AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { track } from "@/lib/track";
 import { saveRecentWallet } from "@/lib/recent-wallets";
+import { useWalletEnabled } from "@/lib/use-wallet-enabled";
 
 export default function WalletPage({ params }: { params: Promise<{ address: string }> }) {
   const { address } = use(params);
+  const isLocal = useWalletEnabled();
   const { address: connectedAddress } = useAccount();
-  const isOwner = connectedAddress?.toLowerCase() === address.toLowerCase();
+  const isOwner = isLocal && !!connectedAddress && connectedAddress.toLowerCase() === address.toLowerCase();
 
   const [profile, setProfile] = useState<WalletProfile | null>(null);
   const [positions, setPositions] = useState<PositionsResponse | null>(null);

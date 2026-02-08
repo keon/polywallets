@@ -8,6 +8,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
 import { track } from "@/lib/track";
+import { useWalletEnabled } from "@/lib/use-wallet-enabled";
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
@@ -19,6 +20,7 @@ function GitHubIcon({ className }: { className?: string }) {
 
 export function SiteHeader() {
   const router = useRouter();
+  const isLocal = useWalletEnabled();
   const { address: connectedAddress, isConnected } = useAccount();
 
   const goToConnectedWallet = () => {
@@ -44,7 +46,7 @@ export function SiteHeader() {
           >
             <GitHubIcon className="h-5 w-5" />
           </a>
-          {isConnected && connectedAddress && (
+          {isLocal && isConnected && connectedAddress && (
             <Button
               variant="ghost"
               size="sm"
@@ -55,7 +57,7 @@ export function SiteHeader() {
               <span className="hidden sm:inline">My Wallet</span>
             </Button>
           )}
-          <ConnectButton accountStatus="address" chainStatus="icon" showBalance={false} />
+          {isLocal && <ConnectButton accountStatus="address" chainStatus="icon" showBalance={false} />}
         </div>
       </div>
     </header>
