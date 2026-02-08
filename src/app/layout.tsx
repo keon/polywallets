@@ -41,19 +41,19 @@ export const metadata: Metadata = {
       "Explore any Polymarket wallet. Positions, P&L, performance, leaderboard, and more.",
     images: [
       {
-        url: "/logo.png",
-        width: 512,
-        height: 512,
-        alt: "Polywallets",
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Polywallets — Polymarket Wallet Explorer",
       },
     ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Polywallets — Polymarket Wallet Explorer",
     description:
       "Explore any Polymarket wallet. Positions, P&L, performance, leaderboard, and more.",
-    images: ["/logo.png"],
+    images: ["/og.png"],
   },
   icons: {
     icon: [
