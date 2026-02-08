@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://polywallets.vercel.app/sitemap.xml",
+    sitemap: "https://polywallets.xyz/sitemap.xml",
   };
 }

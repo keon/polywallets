@@ -9,7 +9,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE_URL = "https://polywallets.vercel.app";
+const SITE_URL = "https://polywallets.xyz";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
