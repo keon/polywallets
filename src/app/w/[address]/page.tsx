@@ -4,7 +4,7 @@ import { useEffect, useState, use } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { SiteHeader } from "@/components/site-header";
 import { WalletHeader } from "@/components/wallet-header";
-import { MetricsCards } from "@/components/metrics-cards";
+import { MetricsCards, type TimeWindow } from "@/components/metrics-cards";
 import { PositionsTable } from "@/components/positions-table";
 import { MarketPerformance } from "@/components/market-performance";
 import { SimilarWallets } from "@/components/similar-wallets";
@@ -69,6 +69,7 @@ export default function WalletPage({ params }: { params: Promise<{ address: stri
   const [markets, setMarkets] = useState<WalletMarketsResponse | null>(null);
   const [similar, setSimilar] = useState<SimilarWalletsResponse | null>(null);
   const [pnl, setPnl] = useState<WalletPnLResponse | null>(null);
+  const [timeWindow, setTimeWindow] = useState<TimeWindow>("all_time");
 
   const [profileLoading, setProfileLoading] = useState(true);
   const [positionsLoading, setPositionsLoading] = useState(true);
@@ -121,7 +122,6 @@ export default function WalletPage({ params }: { params: Promise<{ address: stri
     setPositionsLoading(true);
     setMarketsLoading(true);
     setSimilarLoading(true);
-    setPnlLoading(true);
     setError(null);
 
     track("wallet-view", { address: wallet });
@@ -147,11 +147,38 @@ export default function WalletPage({ params }: { params: Promise<{ address: stri
       .catch(() => {})
       .finally(() => setSimilarLoading(false));
 
-    getWalletPnL(wallet, { granularity: "day" })
+  }, [address]);
+
+  // Fetch PnL data (re-fetches when time window changes)
+  useEffect(() => {
+    const now = Math.floor(Date.now() / 1000);
+    let startTime: number | undefined;
+    let granularity = "day";
+
+    if (timeWindow === "one_day") {
+      startTime = now - 86400;
+      granularity = "hour";
+    } else if (timeWindow === "seven_day") {
+      startTime = now - 7 * 86400;
+      granularity = "day";
+    } else if (timeWindow === "thirty_day") {
+      startTime = now - 30 * 86400;
+      granularity = "day";
+    } else {
+      // all_time — no start_time filter
+      startTime = undefined;
+      granularity = "day";
+    }
+
+    setPnlLoading(true);
+    getWalletPnL(address, {
+      granularity,
+      start_time: startTime,
+    })
       .then(setPnl)
       .catch(() => {})
       .finally(() => setPnlLoading(false));
-  }, [address]);
+  }, [address, timeWindow]);
 
   const allTimeMetrics = profile?.metrics.all_time;
 
@@ -205,7 +232,7 @@ export default function WalletPage({ params }: { params: Promise<{ address: stri
 
         {/* 2. Chart — full bleed, no title */}
         <div className="mt-2">
-          <PnlChart data={pnl} loading={pnlLoading} />
+          <PnlChart data={pnl} loading={pnlLoading} timeWindow={timeWindow} />
         </div>
 
         {/* 3. Stats — Robinhood flat grid with period pills */}
@@ -216,7 +243,7 @@ export default function WalletPage({ params }: { params: Promise<{ address: stri
               {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-4 w-full" />)}
             </div>
           ) : profile ? (
-            <MetricsCards profile={profile} />
+            <MetricsCards profile={profile} activeWindow={timeWindow} onWindowChange={setTimeWindow} />
           ) : null}
         </div>
 

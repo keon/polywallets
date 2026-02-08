@@ -3,6 +3,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatUSD, pnlSign } from "@/lib/format";
 import type { WalletPnLResponse } from "@/lib/predexon";
+import type { TimeWindow } from "@/components/metrics-cards";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -16,17 +17,26 @@ import {
 interface PnlChartProps {
   data: WalletPnLResponse | null;
   loading: boolean;
+  timeWindow?: TimeWindow;
 }
 
-function formatDate(ts: number): string {
-  return new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+function formatDate(ts: number, timeWindow?: TimeWindow): string {
+  const date = new Date(ts * 1000);
+  if (timeWindow === "one_day") {
+    return date.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  }
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function formatAxisDate(ts: number): string {
-  return new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+function formatAxisDate(ts: number, timeWindow?: TimeWindow): string {
+  const date = new Date(ts * 1000);
+  if (timeWindow === "one_day") {
+    return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  }
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-export function PnlChart({ data, loading }: PnlChartProps) {
+export function PnlChart({ data, loading, timeWindow }: PnlChartProps) {
   if (loading) {
     return <Skeleton className="h-48 sm:h-56 w-full rounded-none" />;
   }
@@ -61,7 +71,7 @@ export function PnlChart({ data, loading }: PnlChartProps) {
           </defs>
           <XAxis
             dataKey="ts"
-            tickFormatter={formatAxisDate}
+            tickFormatter={(ts) => formatAxisDate(ts, timeWindow)}
             tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
             axisLine={false}
             tickLine={false}
@@ -78,7 +88,7 @@ export function PnlChart({ data, loading }: PnlChartProps) {
               padding: "6px 10px",
               boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
             }}
-            labelFormatter={(ts) => formatDate(Number(ts))}
+            labelFormatter={(ts) => formatDate(Number(ts), timeWindow)}
             formatter={(value) => [
               `${pnlSign(Number(value))}${formatUSD(Number(value))}`,
               "P&L",

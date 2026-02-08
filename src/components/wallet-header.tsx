@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, ArrowLeft } from "lucide-react";
+import { Copy, Check, ArrowLeft, ExternalLink } from "lucide-react";
 import { formatAddress, formatUSD, pnlColor, pnlSign, formatPct } from "@/lib/format";
 import { track } from "@/lib/track";
 import { useState } from "react";
@@ -55,6 +55,16 @@ export function WalletHeader({ address, tradingStyles, isOwner, firstTradeAt, la
         <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={copyAddress}>
           {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
         </Button>
+        <a
+          href={`https://polymarket.com/profile/${address}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => track("view-polymarket-profile", { address })}
+        >
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" title="View on Polymarket">
+            <ExternalLink className="h-3 w-3" />
+          </Button>
+        </a>
         {isOwner && <Badge variant="secondary" className="text-[10px]">You</Badge>}
         {badges.map((style) => (
           <Badge key={style} variant="outline" className="capitalize text-[10px] px-1.5 py-0 text-muted-foreground">

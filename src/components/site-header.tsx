@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
 import { track } from "@/lib/track";
 import { useWalletEnabled } from "@/lib/use-wallet-enabled";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
@@ -38,6 +39,7 @@ export function SiteHeader() {
           <span className="text-base font-bold">Polywallets</span>
         </Link>
         <div className="flex items-center gap-2 sm:gap-3">
+          <ThemeToggle />
           <a
             href="https://github.com/keon/polywallets"
             target="_blank"

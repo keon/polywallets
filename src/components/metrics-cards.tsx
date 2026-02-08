@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { formatUSD, formatPct, pnlColor, pnlSign } from "@/lib/format";
 import type { WalletProfile, WindowMetrics, AllTimeMetrics } from "@/lib/predexon";
 
+export type TimeWindow = keyof WalletProfile["metrics"];
+
 interface MetricsCardsProps {
   profile: WalletProfile;
+  activeWindow: TimeWindow;
+  onWindowChange: (window: TimeWindow) => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -30,8 +33,9 @@ function Stat({ label, value, className }: { label: string; value: string; class
   );
 }
 
-export function MetricsCards({ profile }: MetricsCardsProps) {
-  const [active, setActive] = useState<keyof WalletProfile["metrics"]>("all_time");
+export function MetricsCards({ profile, activeWindow, onWindowChange }: MetricsCardsProps) {
+  const active = activeWindow;
+  const setActive = onWindowChange;
   const m: WindowMetrics | undefined = profile.metrics[active];
   const isAllTime = active === "all_time";
   const at = isAllTime && m ? (m as AllTimeMetrics) : null;
