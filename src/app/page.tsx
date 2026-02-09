@@ -170,6 +170,9 @@ export default function Home() {
             <Link href="/terms" className="hover:text-foreground transition-colors">
               Terms of Service
             </Link>
+            <Link href="/blog" className="hover:text-foreground transition-colors">
+              Blog
+            </Link>
             <a
               href="https://github.com/keon/polywallets"
               target="_blank"
