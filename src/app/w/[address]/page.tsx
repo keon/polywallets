@@ -5,7 +5,7 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagm
 import { SiteHeader } from "@/components/site-header";
 import { WalletHeader } from "@/components/wallet-header";
 import { MetricsCards, type TimeWindow } from "@/components/metrics-cards";
-import { PositionsTable } from "@/components/positions-table";
+import { PositionsTable, type PositionSortBy } from "@/components/positions-table";
 import { MarketPerformance } from "@/components/market-performance";
 import { SimilarWallets } from "@/components/similar-wallets";
 import { PnlChart } from "@/components/pnl-chart";
@@ -14,6 +14,7 @@ import {
   getWalletProfile,
   getWalletPositions,
   getWalletMarkets,
+  getAllWalletMarketIds,
   getSimilarWallets,
   getWalletPnL,
   type WalletProfile,
@@ -58,6 +59,13 @@ import { track } from "@/lib/track";
 import { saveRecentWallet } from "@/lib/recent-wallets";
 import { useWalletEnabled } from "@/lib/use-wallet-enabled";
 
+const TIME_WINDOW_TO_API: Record<TimeWindow, string> = {
+  one_day: "1d",
+  seven_day: "7d",
+  thirty_day: "30d",
+  all_time: "all_time",
+};
+
 export default function WalletPage({ params }: { params: Promise<{ address: string }> }) {
   const { address } = use(params);
   const isLocal = useWalletEnabled();
@@ -70,12 +78,15 @@ export default function WalletPage({ params }: { params: Promise<{ address: stri
   const [similar, setSimilar] = useState<SimilarWalletsResponse | null>(null);
   const [pnl, setPnl] = useState<WalletPnLResponse | null>(null);
   const [timeWindow, setTimeWindow] = useState<TimeWindow>("all_time");
+  const [positionSort, setPositionSort] = useState<PositionSortBy>("value");
+  const [activeMarketIds, setActiveMarketIds] = useState<Set<string> | null>(null);
 
   const [profileLoading, setProfileLoading] = useState(true);
   const [positionsLoading, setPositionsLoading] = useState(true);
   const [marketsLoading, setMarketsLoading] = useState(true);
   const [similarLoading, setSimilarLoading] = useState(true);
   const [pnlLoading, setPnlLoading] = useState(true);
+  const [filterLoading, setFilterLoading] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [redeemTarget, setRedeemTarget] = useState<Position | null>(null);
@@ -115,12 +126,11 @@ export default function WalletPage({ params }: { params: Promise<{ address: stri
 
   const redeemLoading = isRedeemSigning || isRedeemConfirming;
 
+  // Initial fetch: profile, similar wallets
   useEffect(() => {
     const wallet = address;
 
     setProfileLoading(true);
-    setPositionsLoading(true);
-    setMarketsLoading(true);
     setSimilarLoading(true);
     setError(null);
 
@@ -132,22 +142,30 @@ export default function WalletPage({ params }: { params: Promise<{ address: stri
       .catch((e) => setError(e.message))
       .finally(() => setProfileLoading(false));
 
-    getWalletPositions(wallet, { include_closed: true, limit: 200 })
-      .then(setPositions)
-      .catch(() => {})
-      .finally(() => setPositionsLoading(false));
-
-    getWalletMarkets(wallet, { sort_by: "realized_pnl", limit: 100 })
-      .then(setMarkets)
-      .catch(() => {})
-      .finally(() => setMarketsLoading(false));
-
     getSimilarWallets(wallet, { limit: 20 })
       .then(setSimilar)
       .catch(() => {})
       .finally(() => setSimilarLoading(false));
 
   }, [address]);
+
+  // Fetch positions (re-fetches when sort changes)
+  useEffect(() => {
+    setPositionsLoading(true);
+    getWalletPositions(address, { include_closed: true, limit: 200, sort_by: positionSort, order: "desc" })
+      .then(setPositions)
+      .catch(() => {})
+      .finally(() => setPositionsLoading(false));
+  }, [address, positionSort]);
+
+  // Fetch markets (re-fetches when time window changes)
+  useEffect(() => {
+    setMarketsLoading(true);
+    getWalletMarkets(address, { window: TIME_WINDOW_TO_API[timeWindow], sort_by: "realized_pnl", limit: 100 })
+      .then(setMarkets)
+      .catch(() => {})
+      .finally(() => setMarketsLoading(false));
+  }, [address, timeWindow]);
 
   // Fetch PnL data (re-fetches when time window changes)
   useEffect(() => {
@@ -178,6 +196,22 @@ export default function WalletPage({ params }: { params: Promise<{ address: stri
       .then(setPnl)
       .catch(() => {})
       .finally(() => setPnlLoading(false));
+  }, [address, timeWindow]);
+
+  // Fetch ALL market IDs for the selected time window (paginated) to filter positions
+  useEffect(() => {
+    if (timeWindow === "all_time") {
+      setActiveMarketIds(null);
+      setFilterLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setFilterLoading(true);
+    getAllWalletMarketIds(address, TIME_WINDOW_TO_API[timeWindow])
+      .then((ids) => { if (!cancelled) setActiveMarketIds(ids); })
+      .catch(() => { if (!cancelled) setActiveMarketIds(null); })
+      .finally(() => { if (!cancelled) setFilterLoading(false); });
+    return () => { cancelled = true; };
   }, [address, timeWindow]);
 
   const allTimeMetrics = profile?.metrics.all_time;
@@ -267,10 +301,14 @@ export default function WalletPage({ params }: { params: Promise<{ address: stri
         <div className="mt-5">
           <PositionsTable
             data={positions}
-            loading={positionsLoading}
+            loading={positionsLoading || filterLoading}
             isOwner={isOwner}
             onRedeem={setRedeemTarget}
             redeemedIds={redeemedIds}
+            sortBy={positionSort}
+            onSortChange={setPositionSort}
+            activeMarketIds={activeMarketIds}
+            marketMetrics={markets}
           />
         </div>
 

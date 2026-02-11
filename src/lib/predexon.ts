@@ -146,6 +146,7 @@ export interface MarketEntry {
   market_slug: string;
   metrics: {
     realized_pnl: number;
+    total_pnl?: number;
     volume: number;
     roi: number;
     trades: number;
@@ -157,6 +158,7 @@ export interface MarketEntry {
     avg_buy_price: number | null;
     avg_sell_price: number | null;
     fees_paid: number;
+    fees_refunded?: number;
   };
   entry_edge: number | null;
   first_trade_at: number | null;
@@ -250,9 +252,36 @@ export function getWalletMarkets(
     sort_by?: string;
     order?: string;
     limit?: number;
+    pagination_key?: string;
   }
 ) {
   return fetchAPI<WalletMarketsResponse>(`/api/wallet/${wallet}/markets`, opts as Record<string, string | number | boolean | undefined>);
+}
+
+/**
+ * Fetch ALL market condition_ids for a wallet+window by paginating through the markets endpoint.
+ * Returns a Set of condition_ids representing every market traded in the given window.
+ */
+export async function getAllWalletMarketIds(
+  wallet: string,
+  window: string
+): Promise<Set<string>> {
+  const ids = new Set<string>();
+  let paginationKey: string | undefined;
+
+  do {
+    const res = await getWalletMarkets(wallet, {
+      window,
+      limit: 100,
+      pagination_key: paginationKey,
+    });
+    for (const m of res.markets) {
+      ids.add(m.condition_id);
+    }
+    paginationKey = res.pagination.pagination_key ?? undefined;
+  } while (paginationKey);
+
+  return ids;
 }
 
 export function getWalletPnL(

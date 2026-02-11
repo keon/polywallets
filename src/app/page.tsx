@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, ArrowRight, X, Clock } from "lucide-react";
 import { Leaderboard } from "@/components/leaderboard";
+import { CohortAnalytics } from "@/components/cohort-analytics";
 import { SiteHeader } from "@/components/site-header";
 import { formatAddress } from "@/lib/format";
 import { getRecentWallets, saveRecentWallet, removeRecentWallet, timeAgo, type RecentWallet } from "@/lib/recent-wallets";
@@ -155,8 +156,9 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="w-full max-w-4xl pb-10">
+        <div className="w-full max-w-4xl pb-10 space-y-8">
           <Leaderboard />
+          <CohortAnalytics />
         </div>
       </div>
 

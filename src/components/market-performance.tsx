@@ -47,18 +47,21 @@ export function MarketPerformance({ data, loading }: MarketPerformanceProps) {
       </div>
       <div className="divide-y divide-border/50">
         {displayMarkets.map((market) => (
-          <div key={market.market_slug} className="py-2.5">
-            <div className="flex items-start justify-between gap-3">
-              <a
-                href={`https://polymarket.com/markets?_q=${encodeURIComponent(market.title)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-xs sm:text-sm leading-snug flex-1 min-w-0 hover:underline inline-flex items-start gap-1 group"
-              >
-                <span>{market.title}</span>
-                <ExternalLink className="h-3 w-3 shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity" />
-              </a>
-              <div className="text-right shrink-0">
+          <a
+            key={market.condition_id}
+            href={`https://polymarket.com/markets?_q=${encodeURIComponent(market.title)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between py-2.5 gap-2 hover:bg-accent/30 -mx-2 px-2 rounded-sm transition-colors"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-xs sm:text-sm truncate">{market.title}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {market.metrics.trades} trades · {market.metrics.wins}W–{market.metrics.losses}L · {formatPct(market.metrics.win_rate)} win
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <div className="text-right">
                 <p className={`font-mono text-xs sm:text-sm font-medium tabular-nums ${pnlColor(market.metrics.realized_pnl)}`}>
                   {pnlSign(market.metrics.realized_pnl)}{formatUSD(market.metrics.realized_pnl)}
                 </p>
@@ -66,13 +69,9 @@ export function MarketPerformance({ data, loading }: MarketPerformanceProps) {
                   {pnlSign(market.metrics.roi)}{formatPct(market.metrics.roi)}
                 </p>
               </div>
+              <ExternalLink className="h-3 w-3 text-muted-foreground/40 shrink-0" />
             </div>
-            <div className="flex items-center gap-3 mt-0.5 text-[10px] text-muted-foreground">
-              <span>{market.metrics.trades} trades</span>
-              <span>{market.metrics.wins}W – {market.metrics.losses}L</span>
-              <span>{formatPct(market.metrics.win_rate)} win</span>
-            </div>
-          </div>
+          </a>
         ))}
       </div>
       {hasMore && (

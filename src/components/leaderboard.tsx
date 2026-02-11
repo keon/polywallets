@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatUSD, formatPct, formatAddress, pnlColor, pnlSign } from "@/lib/format";
+import { formatUSD, formatPct, formatCompact, formatAddress, pnlColor, pnlSign } from "@/lib/format";
 import Link from "next/link";
 import { Search, ChevronRight, ArrowLeft, ExternalLink } from "lucide-react";
 import { track } from "@/lib/track";
@@ -14,6 +14,7 @@ interface LeaderboardEntry {
   user: string;
   metrics: {
     realized_pnl: number;
+    total_pnl?: number;
     volume: number;
     roi: number;
     trades: number;
@@ -21,10 +22,17 @@ interface LeaderboardEntry {
     losses: number;
     win_rate: number;
     profit_factor: number;
+    positions_closed?: number;
+    avg_buy_price: number | null;
+    avg_sell_price: number | null;
+    fees_paid?: number;
+    fees_refunded?: number;
   };
   trading_styles: {
     primary_style: string;
   };
+  entry_edge?: number | null;
+  first_trade_at?: number | null;
 }
 
 interface Market {
@@ -42,6 +50,17 @@ function rankColor(rank: number): string {
   if (rank === 3) return "text-[var(--color-rank-bronze)]";
   return "text-muted-foreground";
 }
+
+function formatPrice(value: number | null): string {
+  if (value === null || value === undefined) return "\u2014";
+  return `${(value * 100).toFixed(1)}\u00a2`;
+}
+
+function formatShortDate(unix: number): string {
+  return new Date(unix * 1000).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+}
+
+const SEP = " \u00b7 ";
 
 export function Leaderboard() {
   return (
@@ -220,40 +239,68 @@ function MarketLeaderboard() {
   );
 }
 
+const PREVIEW_COUNT = 10;
+
 function LeaderboardList({ entries }: { entries: LeaderboardEntry[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const display = expanded ? entries : entries.slice(0, PREVIEW_COUNT);
+  const hasMore = entries.length > PREVIEW_COUNT;
+
   return (
-    <div className="divide-y divide-border/50">
-      {entries.map((entry) => (
-        <Link
-          key={entry.user}
-          href={`/w/${entry.user}`}
-          onClick={() => track("leaderboard-click", { address: entry.user, rank: entry.rank })}
-          className="flex items-center justify-between py-2.5 gap-3 hover:bg-accent/30 -mx-2 px-2 rounded-sm transition-colors"
+    <div>
+      <div className="divide-y divide-border/50">
+        {display.map((entry) => {
+          const m = entry.metrics;
+
+          return (
+            <Link
+              key={entry.user}
+              href={`/w/${entry.user}`}
+              onClick={() => track("leaderboard-click", { address: entry.user, rank: entry.rank })}
+              className="flex items-center justify-between py-2 gap-3 hover:bg-accent/30 -mx-2 px-2 rounded-sm transition-colors"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={`font-mono font-bold text-[11px] w-5 shrink-0 tabular-nums ${rankColor(entry.rank)}`}>
+                  {entry.rank}
+                </span>
+                <div className="min-w-0">
+                  <p className="font-mono text-xs font-medium" title={entry.user}>{formatAddress(entry.user)}</p>
+                  <p className="text-[9px] text-muted-foreground/60 font-mono tabular-nums mt-px truncate">
+                    <span className="capitalize" title="Trading style">{entry.trading_styles.primary_style.toLowerCase().replace(/_/g, " ")}</span>
+                    <span className="hidden sm:inline">
+                      {SEP}<span title="Total volume">${formatCompact(m.volume)}</span>
+                      {SEP}<span title="Total trades">{m.trades}t</span>
+                      {SEP}<span title="Win rate">{formatPct(m.win_rate)}w</span>
+                      {m.avg_buy_price != null && <>{SEP}<span title="Avg buy price">{formatPrice(m.avg_buy_price)}b</span></>}
+                      {m.avg_sell_price != null && <>{SEP}<span title="Avg sell price">{formatPrice(m.avg_sell_price)}s</span></>}
+                      {entry.first_trade_at && <>{SEP}<span title="First trade">{formatShortDate(entry.first_trade_at)}</span></>}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <div className="text-right">
+                  <p className={`font-mono text-xs font-medium tabular-nums ${pnlColor(m.realized_pnl)}`} title="Realized P&L">
+                    {pnlSign(m.realized_pnl)}{formatUSD(m.realized_pnl)}
+                  </p>
+                  <p className={`font-mono text-[10px] tabular-nums ${pnlColor(m.roi)}`} title="Return on investment">
+                    {pnlSign(m.roi)}{formatPct(m.roi)}
+                  </p>
+                </div>
+                <ChevronRight className="h-3 w-3 text-muted-foreground/40" />
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+      {hasMore && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="w-full text-center py-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className={`font-mono font-bold text-xs w-5 shrink-0 tabular-nums ${rankColor(entry.rank)}`}>
-              {entry.rank}
-            </span>
-            <div className="min-w-0">
-              <p className="font-mono text-xs sm:text-sm font-medium" title={entry.user}>{formatAddress(entry.user)}</p>
-              <p className="text-[10px] text-muted-foreground capitalize mt-0.5">
-                {entry.trading_styles.primary_style.toLowerCase().replace(/_/g, " ")}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="text-right">
-              <p className={`font-mono text-xs sm:text-sm font-medium tabular-nums ${pnlColor(entry.metrics.realized_pnl)}`}>
-                {pnlSign(entry.metrics.realized_pnl)}{formatUSD(entry.metrics.realized_pnl)}
-              </p>
-              <p className={`font-mono text-[10px] tabular-nums ${pnlColor(entry.metrics.roi)}`}>
-                {pnlSign(entry.metrics.roi)}{formatPct(entry.metrics.roi)}
-              </p>
-            </div>
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-          </div>
-        </Link>
-      ))}
+          {expanded ? "Show less" : `View all ${entries.length}`}
+        </button>
+      )}
     </div>
   );
 }
